@@ -32,6 +32,8 @@ export interface Beat {
   hypeScene?: string;
   /** Placed b-roll clip path if visual === 'broll'. */
   brollClip?: string;
+  /** In-point (seconds) used when trimming the b-roll clip for this beat. */
+  brollInSec?: number;
 }
 
 export interface Transcript {

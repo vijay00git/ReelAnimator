@@ -1,6 +1,6 @@
-import { readdirSync, statSync, existsSync } from 'node:fs';
+import { readdirSync, statSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, join, basename } from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Beat, ReelConfig } from './types.js';
 
@@ -15,29 +15,78 @@ export interface PlacedBroll {
 
 /**
  * Use the user's raw footage as the background for beats.
- * The raw footage is the primary visual; captions + motion overlays sit on top.
- * Falls back to yt-dlp sourcing only if no raw footage is available.
+ * The newest clip in the library wins (so a fresh upload beats a tracked
+ * default), and each beat gets a different in-point so the reel does not
+ * repeat the same frames.
  */
-export function matchLocalBroll(beats: Beat[], cfg: ReelConfig): PlacedBroll[] {
+export async function matchLocalBroll(
+  beats: Beat[], cfg: ReelConfig, outDir: string,
+): Promise<PlacedBroll[]> {
   const libDir = resolve(process.cwd(), cfg.broll.rawFootageDir);
   if (!existsSync(libDir)) return [];
 
   const files = listVideoFiles(libDir);
   if (files.length === 0) return [];
 
+  const srcClip = pickNewest(files);
+  const clipDur = probeDuration(srcClip);
+  const trimDir = resolve(outDir, 'broll');
+  mkdirSync(trimDir, { recursive: true });
+
   const placed: PlacedBroll[] = [];
-  // Use the first (longest) raw footage clip as the background for all beats.
-  const bgClip = files[0] ?? null;
 
   for (const b of beats) {
     const dur = Math.max(0.5, b.end - b.start);
-    if (bgClip) {
-      placed.push({ index: b.index, sourcePath: bgClip, inSec: 0, outSec: Math.min(dur, 4) });
-      b.brollClip = bgClip;
+    // Spread in-points across the source clip so each beat shows a new moment.
+    const span = Math.max(0.1, clipDur - dur);
+    const inSec = clipDur > dur ? (b.index * 1.9) % span : 0;
+
+    const out = resolve(trimDir, `${b.id}.mp4`);
+    try {
+      await prepBrollClip(srcClip, out, cfg, inSec, dur);
+    } catch (e: any) {
+      // ffmpeg failed — fall back to the untrimmed source.
+      console.warn(`[broll] trim failed for ${b.id}: ${e?.stderr || e?.message}; using full clip.`);
+      b.brollClip = srcClip;
+      b.brollInSec = 0;
       b.visual = 'broll';
+      placed.push({ index: b.index, sourcePath: srcClip, inSec: 0, outSec: dur });
+      continue;
     }
+
+    b.brollClip = out;
+    b.brollInSec = inSec;
+    b.visual = 'broll';
+    placed.push({ index: b.index, sourcePath: out, inSec, outSec: dur });
   }
+
   return placed;
+}
+
+/** Newest video file by mtime — a fresh upload beats a tracked default. */
+function pickNewest(files: string[]): string {
+  let best = files[0]!;
+  let bestT = -1;
+  for (const f of files) {
+    try {
+      const t = statSync(f).mtimeMs;
+      if (t > bestT) { bestT = t; best = f; }
+    } catch { /* ignore */ }
+  }
+  return best;
+}
+
+/** Duration in seconds via ffprobe; 0 when unknown. */
+function probeDuration(p: string): number {
+  try {
+    const out = execFileSync('ffprobe', [
+      '-v', 'error', '-show_entries', 'format=duration',
+      '-of', 'default=noprint_wrappers=1:nokey=1', p,
+    ], { encoding: 'utf8', timeout: 30_000 });
+    return parseFloat(out.trim()) || 0;
+  } catch {
+    return 0;
+  }
 }
 
 function listVideoFiles(dir: string): string[] {

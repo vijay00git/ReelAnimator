@@ -139,7 +139,7 @@ async function buildAndRender(
   }
 
   console.log(`[${jobId}] matching local b-roll…`);
-  matchLocalBroll(beats, cfg);
+  await matchLocalBroll(beats, cfg, dir);
   markStep(state, 'broll', 'done');
 
   console.log(`[${jobId}] building captions…`);
