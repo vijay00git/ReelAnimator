@@ -7,6 +7,29 @@ import type { Beat, ReelConfig } from './types.js';
 const execFileAsync = promisify(execFile);
 
 /**
+ * Whether the hyper-motion CLI is usable. Probed once and cached.
+ * The CLI is optional: when absent the pipeline falls back to b-roll/solid
+ * backgrounds instead of crashing.
+ */
+let hyperAvailable: boolean | null = null;
+
+async function isHyperMotionAvailable(): Promise<boolean> {
+  if (hyperAvailable !== null) return hyperAvailable;
+  try {
+    await execFileAsync('hypermotion', ['--version'], { timeout: 30_000 });
+    hyperAvailable = true;
+  } catch (e: any) {
+    if (e?.code === 'ENOENT') {
+      console.warn('[hypermotion] CLI not found — skipping motion scenes; beats will use b-roll/solid backgrounds. Install from https://github.com/psiddharthdesign/hypermotion to enable.');
+    } else {
+      console.warn(`[hypermotion] not usable: ${e?.stderr || e?.message}`);
+    }
+    hyperAvailable = false;
+  }
+  return hyperAvailable;
+}
+
+/**
  * Build a .hype scene JSON for a beat (text-on-screen motion graphic).
  * Uses the hyper-motion SceneJson shape (see cli/src/scene/build.ts).
  */
@@ -88,6 +111,7 @@ export async function renderHypeScene(
   beat: Beat, cfg: ReelConfig, outDir: string,
 ): Promise<string | null> {
   if (!cfg.hypermotion.enabled) return null;
+  if (!(await isHyperMotionAvailable())) return null;
 
   const sceneDir = resolve(outDir, cfg.hypermotion.renderDir);
   mkdirSync(sceneDir, { recursive: true });
@@ -98,13 +122,19 @@ export async function renderHypeScene(
 
   writeFileSync(jsonPath, JSON.stringify(buildSceneJson(beat, cfg), null, 2), 'utf8');
 
-  // create .hype
-  await execFileAsync('hypermotion', ['create', hypePath, '--from', jsonPath], { timeout: 120_000 });
-
-  // validate
-  await execFileAsync('hypermotion', ['validate', hypePath], { timeout: 60_000 }).catch((e) => {
-    throw new Error(`hypermotion validate failed for ${beat.id}: ${e.stderr || e.message}`);
-  });
+  // create + validate .hype (skip gracefully if the CLI can't build it)
+  try {
+    await execFileAsync('hypermotion', ['create', hypePath, '--from', jsonPath], { timeout: 120_000 });
+    await execFileAsync('hypermotion', ['validate', hypePath], { timeout: 60_000 });
+  } catch (e: any) {
+    if (e?.code === 'ENOENT') {
+      hyperAvailable = false;
+      console.warn('[hypermotion] CLI disappeared — skipping remaining motion scenes.');
+      return null;
+    }
+    console.warn(`[hypermotion] scene build failed for ${beat.id}: ${e?.stderr || e?.message}; using b-roll instead.`);
+    return null;
+  }
 
   // render (requires hyper-motion desktop app; skip gracefully if absent)
   const quality = cfg.hypermotion.quality === '1080p' ? 'comp' : cfg.hypermotion.quality;
@@ -115,7 +145,12 @@ export async function renderHypeScene(
     beat.hypeScene = mp4Path;
     return mp4Path;
   } catch (e: any) {
-    // Desktop app not installed — fall back to solid background (handled by compose).
+    // Desktop app not installed, or the CLI vanished — fall back to solid/b-roll.
+    if (e?.code === 'ENOENT') {
+      hyperAvailable = false;
+      console.warn('[hypermotion] CLI disappeared — beat will use b-roll/solid background.');
+      return null;
+    }
     if (String(e?.stderr || e?.message || '').includes('desktop app not found')) {
       console.warn(`[hypermotion] desktop app not installed; beat ${beat.id} will use solid background. Install from https://github.com/psiddharthdesign/hypermotion/releases to enable.`);
       return null;
