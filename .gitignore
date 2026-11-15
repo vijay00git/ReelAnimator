@@ -1,9 +1,29 @@
+# Dependencies
 node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# Build output
 dist/
 out/
-.venv/
-vendor/
+hyperframes-proj/renders/
+hyperframes-proj/.hyperframes/
+
+# Secrets
 .env
+.env.local
+
+# Large media (Raw Footage is tracked so Colab can fetch it; Reference is local-only)
+Reference/
+
+# Vendored skills (cloned on demand)
+vendor/
+
+# OS / editor
+.DS_Store
 *.log
 .remotion/
-.DS_Store
+
+# Keep .env.example
+!.env.example
