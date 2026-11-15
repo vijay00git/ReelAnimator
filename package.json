@@ -1,0 +1,39 @@
+{
+  "name": "reelanimator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Automated Instagram Reels pipeline: English text + Tamil voice via Remotion, hyper-motion, ffmpeg, Whisper, ElevenLabs, yt-dlp",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx src/pipeline/index.ts",
+    "reel": "tsx src/pipeline/index.ts",
+    "remotion:studio": "remotion studio remotion/src/index.ts",
+    "remotion:render": "remotion render remotion/src/index.ts BaseReel",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "node --test --import tsx test/pipeline.test.ts"
+  },
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.78.0",
+    "@remotion/cli": "^4.0.543",
+    "commander": "^15.1.0",
+    "dotenv": "^18.0.10",
+    "remotion": "^4.0.543",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

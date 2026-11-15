@@ -1,0 +1,1 @@
+{"_comment": "ElevenLabs premade/default voice IDs. Free tier cannot use Voice Library via API. Fill these after choosing voices in the dashboard. Tamil voice must work with eleven_multilingual_v2.", "en": {"voiceId": "", "label": "English (default premade)"}, "ta": {"voiceId": "", "label": "Tamil (premade, multilingual_v2 compatible)"}}

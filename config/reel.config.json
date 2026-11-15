@@ -1,0 +1,104 @@
+{
+  "output": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "videoCodec": "h264",
+    "crf": 19,
+    "audioCodec": "aac",
+    "audioBitrate": "192k",
+    "audioSampleRate": 44100,
+    "faststart": true,
+    "loudnorm": {
+      "i": -14,
+      "tp": -1,
+      "lra": 11
+    }
+  },
+  "duration": {
+    "targetSec": 45,
+    "minSec": 30,
+    "maxSec": 60
+  },
+  "whisper": {
+    "model": "small",
+    "language": null,
+    "wordTimestamps": true
+  },
+  "tts": {
+    "provider": "sarvam",
+    "model": "bulbul:v3",
+    "languageCode": "ta-IN",
+    "voiceIdTa": "vijay",
+    "voiceIdEn": "shubh",
+    "pace": 1.0,
+    "stability": 0.5,
+    "similarityBoost": 0.75
+  },
+  "style": {
+    "theme": "light",
+    "accent": "#E30000",
+    "accentBright": "#F03010",
+    "accentDark": "#B00000",
+    "bgLight": "#F2F1EC",
+    "bgDark": "#141210",
+    "surface": "#E9E2D9",
+    "textPrimary": "#141210",
+    "textInverse": "#F2F1EC",
+    "textMuted": "#6B6B6B",
+    "border": "#D8D2C7",
+    "fontFamily": "Inter",
+    "fontWeights": {
+      "headline": 800,
+      "subhead": 700,
+      "caption": 600
+    },
+    "fontSize": {
+      "headline": 64,
+      "subhead": 40,
+      "caption": 32
+    },
+    "captionPosition": {
+      "x": "center",
+      "y": 945,
+      "maxWidthPct": 86
+    },
+    "safeZones": {
+      "topPx": 120,
+      "bottomPx": 250,
+      "rightPx": 120
+    },
+    "brollGrade": {
+      "saturation": 0.85,
+      "contrast": 1.02,
+      "warmth": 0.03
+    }
+  },
+  "pacing": {
+    "cutsPerMin": 20,
+    "shotMinSec": 1.5,
+    "shotMaxSec": 4
+  },
+  "broll": {
+    "localLibraryFirst": true,
+    "rawFootageDir": "Raw Footage",
+    "autoPickFirst": false
+  },
+  "sfx": {
+    "enabled": true,
+    "engine": "earshot",
+    "mixGain": 0.6,
+    "bedGain": 0.18,
+    "targetLufs": -16
+  },
+  "hypermotion": {
+    "enabled": true,
+    "renderDir": "scenes",
+    "quality": "1080p"
+  },
+  "renderer": {
+    "engine": "hyperframes",
+    "cliVersion": "0.9.46",
+    "quality": "looks"
+  }
+}

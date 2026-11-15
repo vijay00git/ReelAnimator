@@ -1,0 +1,9 @@
+node_modules/
+dist/
+out/
+.venv/
+vendor/
+.env
+*.log
+.remotion/
+.DS_Store
